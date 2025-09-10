@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sainsburys — Quick Links</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#0ea5ff;--muted:#94a3b8}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#071025 0%, #081226 60%);color:#e6eef8}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);padding:14px;border-radius:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .12s ease,box-shadow .12s}
+    .card:hover{transform:translateY(-6px);box-shadow:0 8px 18px rgba(2,6,23,0.6)}
+    .icon{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,0.03)}
+    .label{font-weight:600}
+    .sub{font-size:12px;color:var(--muted)}
+    footer{margin-top:18px;display:flex;gap:10px;align-items:center}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#7dd3fc22);border:none}
+    .small{font-size:13px;padding:6px 8px}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.6)}
+    .modal.open{display:flex}
+    .panel{background:linear-gradient(180deg,#061827,#041220);padding:18px;border-radius:12px;width:min(680px,95%);box-shadow:0 8px 30px rgba(2,6,23,0.7)}
+    .form-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    .form-row input{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .row-title{width:120px;font-size:14px;color:var(--muted)}
+    .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+    .tiny{font-size:12px;color:var(--muted)}
+    @media (max-width:420px){.row-title{display:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Sainsburys — Quick Links</h1>
+        <p class="lead">One-click access to the sites you asked for. Click a card to open the site.</p>
+      </div>
+      <div>
+        <button id="editBtn" class="small">Edit links</button>
+        <button id="resetBtn" class="small">Reset defaults</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid" id="linksGrid"></div>
+      <footer>
+        <div class="tiny">Tip: edits are saved locally in your browser (localStorage).</div>
+      </footer>
+    </main>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="panel">
+      <h3 style="margin:0 0 8px">Edit links</h3>
+      <div id="form"></div>
+      <div class="actions">
+        <button id="closeModal">Close</button>
+        <button id="saveLinks" class="btn-primary">Save links</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaults = {
+      "Word": "https://www.office.com/launch/word",
+      "Excel": "https://www.office.com/launch/excel",
+      "PowerPoint": "https://www.office.com/launch/powerpoint",
+      "Outlook": "https://outlook.office.com",
+      "ChatGPT": "https://chat.openai.com",
+      "OneDrive": "https://onedrive.live.com",
+      "Sainsburys": "https://www.sainsburys.co.uk/",
+      "Sainsburys Staff": "https://jsainsbury.sharepoint.com/sites/OurSainsburys",
+      "Empower": "https://www.empower.com/"
+    };
+
+    function loadLinks(){
+      try{
+        const raw = localStorage.getItem('quickLinks_v1');
+        return raw ? JSON.parse(raw) : {...defaults};
+      }catch(e){return {...defaults}}
+    }
+    function saveLinks(obj){localStorage.setItem('quickLinks_v1', JSON.stringify(obj))}
+
+    const state = loadLinks();
+    const grid = document.getElementById('linksGrid');
+
+    function renderGrid(){
+      grid.innerHTML = '';
+      Object.keys(state).forEach(key=>{
+        const url = state[key];
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.href = url || '#';
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+        card.innerHTML = `
+          <div class="icon">${getIconSVG(key)}</div>
+          <div style="flex:1">
+            <div class="label">${key}</div>
+            <div class="sub">${shortUrl(url)}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      })
+    }
+
+    function shortUrl(u){try{if(!u) return 'not set'; const parsed = new URL(u); return parsed.hostname.replace('www.','') + parsed.pathname.replace(/\/$/,'');}catch(e){return u}}
+
+    function getIconSVG(name){
+      const n = name.toLowerCase();
+      if(n.includes('word')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" x="2" y="2" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M6 7h12M6 12h12M6 17h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+      if(n.includes('excel')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M7 7l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      if(n.includes('power')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M7 17V7l10 5-10 5z" fill="currentColor"/></svg>';
+      if(n.includes('outlook')||n.includes('mail')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M7 8h10v8H7z" stroke="currentColor" stroke-width="1.2"/><path d="M7 8l5 4 5-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+      if(n.includes('chatgpt')||n.includes('chat')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.2"/><path d="M8 12h8M8 16h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+      if(n.includes('onedrive')||n.includes('drive')) return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 16a3 3 0 0 0-2.82-3.99A5 5 0 0 0 8 12a4 4 0 0 0 0 8h12z" stroke="currentColor" stroke-width="1.1" fill="currentColor"/></svg>';
+      return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.2"/></svg>';
+    }
+
+    const modal = document.getElementById('modal');
+    const formDiv = document.getElementById('form');
+    function openModal(){
+      formDiv.innerHTML = '';
+      Object.keys(state).forEach(k=>{
+        const row = document.createElement('div');
+        row.className = 'form-row';
+        row.innerHTML = `<div class="row-title">${k}</div><input data-key="${k}" value="${state[k]||''}" placeholder="https://...">`;
+        formDiv.appendChild(row);
+      });
+      modal.classList.add('open');
+    }
+    function closeModal(){modal.classList.remove('open')}
+
+    document.getElementById('editBtn').addEventListener('click', openModal);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('saveLinks').addEventListener('click', ()=>{
+      const inputs = formDiv.querySelectorAll('input');
+      inputs.forEach(inp=>{state[inp.dataset.key] = inp.value.trim()});
+      saveLinks(state);
+      renderGrid();
+      closeModal();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(confirm('Reset links to defaults?')){
+        Object.keys(defaults).forEach(k=>state[k]=defaults[k]);
+        saveLinks(state);renderGrid();
+      }
+    });
+
+    renderGrid();
+  </script>
+</body>
+</html>
